@@ -171,6 +171,62 @@ const DEFAULT_DB = {
       password: '123'
     }
   ],
+  
+  registrationRequests: [
+    {
+      id: 'REG-2026-104',
+      name: 'Aditya Gupta',
+      rollNo: 'MPGI/25/EC/011',
+      branch: 'Electronics & Communication Engg (ECE)',
+      course: 'B.Tech ECE — 1st Year',
+      wing: 'Male',
+      hostelName: "Vivekananda Boys' Hostel",
+      roomPref: 'Double Sharing',
+      mobile: '+91 99180 65432',
+      email: 'aditya.gupta@mpgi.edu.in',
+      parentName: 'Suresh Gupta',
+      parentContact: '+91 94151 99881',
+      receiptFileName: 'MPGI_Hostel_Fee_Receipt_2026_Aditya.pdf',
+      receiptFileType: 'application/pdf',
+      receiptFileSize: '245 KB',
+      receiptDataUrl: '',
+      utrNo: 'SBI-UTR-9872145561',
+      amount: '₹68,500 (Annual Room Allotment + Mess Deposit)',
+      status: 'Pending HOD Approval',
+      submittedAt: '2026-11-17 02:45 PM',
+      password: '123',
+      allottedRoom: '',
+      allottedBed: '',
+      hodRemark: ''
+    },
+    {
+      id: 'REG-2026-204',
+      name: 'Megha Saxena',
+      rollNo: 'MPGI/25/CS/088',
+      branch: 'Computer Science & Engineering (CSE)',
+      course: 'B.Tech CSE — 1st Year',
+      wing: 'Female',
+      hostelName: "Gargi Girls' Hostel",
+      roomPref: 'Double Sharing (Window Side)',
+      mobile: '+91 98399 77112',
+      email: 'megha.saxena@mpgi.edu.in',
+      parentName: 'Ramesh Saxena',
+      parentContact: '+91 94150 66221',
+      receiptFileName: 'Hostel_Fee_Challan_Megha.jpg',
+      receiptFileType: 'image/jpeg',
+      receiptFileSize: '412 KB',
+      receiptDataUrl: '',
+      utrNo: 'PNB-CHALLAN-4458921',
+      amount: '₹68,500 (Full Year Hostel + Mess Charge)',
+      status: 'Pending HOD Approval',
+      submittedAt: '2026-11-17 04:10 PM',
+      password: '123',
+      allottedRoom: '',
+      allottedBed: '',
+      hodRemark: ''
+    }
+  ],
+
   applications: [
     {
       id: 'APP-2026-081',
@@ -408,6 +464,85 @@ app.put('/api/mess-menu/:day', requireApiKey, (req, res) => {
   db.messMenu[day] = { ...db.messMenu[day], ...req.body };
   writeDb(db);
   res.json({ success: true, day, menu: db.messMenu[day] });
+});
+
+
+// Registration Requests & Fee Receipt Verification
+app.get('/api/registrations', requireApiKey, (req, res) => {
+  const db = readDb();
+  if (!db.registrationRequests) db.registrationRequests = [];
+  const { wing } = req.query;
+  const list = wing ? db.registrationRequests.filter(r => r.wing === wing) : db.registrationRequests;
+  res.json(list);
+});
+
+app.post('/api/registrations', requireApiKey, (req, res) => {
+  const db = readDb();
+  if (!db.registrationRequests) db.registrationRequests = [];
+  const item = {
+    id: 'REG-2026-' + Math.floor(1000 + Math.random() * 9000),
+    status: 'Pending HOD Approval',
+    submittedAt: new Date().toLocaleString(),
+    allottedRoom: '',
+    allottedBed: '',
+    hodRemark: '',
+    ...req.body
+  };
+  db.registrationRequests.unshift(item);
+  writeDb(db);
+  res.status(201).json(item);
+});
+
+app.post('/api/registrations/:id/approve', requireApiKey, (req, res) => {
+  const db = readDb();
+  if (!db.registrationRequests) db.registrationRequests = [];
+  const reg = db.registrationRequests.find(r => r.id === req.params.id);
+  if (!reg) return res.status(404).json({ error: 'Registration request not found.' });
+
+  const { roomNo, bedNo, block, hostelName, roommates, hodRemark } = req.body;
+  reg.status = 'Approved';
+  reg.allottedRoom = roomNo || 'A-101';
+  reg.allottedBed = bedNo || 'Bed 1';
+  reg.hodRemark = hodRemark || 'Fee receipt verified. Room allotted.';
+
+  // Automatically create Hosteler Account
+  const newHosteler = {
+    id: 'STU-' + (reg.wing === 'Female' ? 'F-' : 'M-') + Math.floor(300 + Math.random() * 600),
+    rollNo: reg.rollNo,
+    name: reg.name,
+    wing: reg.wing,
+    hostelName: hostelName || reg.hostelName || (reg.wing === 'Female' ? "Gargi Girls' Hostel" : "Vivekananda Boys' Hostel"),
+    block: block || 'Block A — 1st Floor',
+    roomNo: reg.allottedRoom,
+    bedNo: reg.allottedBed,
+    roommates: roommates || [],
+    allotted: true,
+    allotmentDate: new Date().toISOString().slice(0, 10),
+    course: reg.course || (reg.branch ? reg.branch + ' — 1st Year' : 'B.Tech — 1st Year'),
+    mobile: reg.mobile,
+    email: reg.email,
+    parentName: reg.parentName || 'Parent / Guardian',
+    parentContact: reg.parentContact || reg.mobile,
+    warden: reg.wing === 'Female' ? 'Prof. Meenakshi Joshi (+91 94150 77889)' : 'Dr. S. K. Tiwari (+91 94150 11223)',
+    messStatus: 'Active (Paid)',
+    messCardNo: 'MPGI-MESS-2026-' + reg.allottedRoom,
+    password: reg.password || '123'
+  };
+
+  db.hostelers.push(newHosteler);
+  writeDb(db);
+  res.json({ success: true, registration: reg, hosteler: newHosteler });
+});
+
+app.post('/api/registrations/:id/reject', requireApiKey, (req, res) => {
+  const db = readDb();
+  if (!db.registrationRequests) db.registrationRequests = [];
+  const reg = db.registrationRequests.find(r => r.id === req.params.id);
+  if (!reg) return res.status(404).json({ error: 'Registration request not found.' });
+  reg.status = 'Rejected';
+  reg.hodRemark = req.body.hodRemark || 'Fee receipt rejected. Please upload valid receipt.';
+  writeDb(db);
+  res.json({ success: true, registration: reg });
 });
 
 // Applications

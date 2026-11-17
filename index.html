@@ -94,7 +94,62 @@
       view: 'landing', // 'landing' | 'student' | 'hod'
       landingMode: 'select', // 'select' | 'student-login' | 'hod-login'
       activeStudentTab: 'overview',
-      activeHodTab: 'applications',
+      activeHodTab: 'registrations',
+      regFilter: 'All',
+      registrationRequests: [
+        {
+          id: 'REG-2026-104',
+          name: 'Aditya Gupta',
+          rollNo: 'MPGI/25/EC/011',
+          branch: 'Electronics & Communication Engg (ECE)',
+          course: 'B.Tech ECE — 1st Year',
+          wing: 'Male',
+          hostelName: "Vivekananda Boys' Hostel",
+          roomPref: 'Double Sharing (Standard)',
+          mobile: '+91 99180 65432',
+          email: 'aditya.gupta@mpgi.edu.in',
+          parentName: 'Suresh Gupta',
+          parentContact: '+91 94151 99881',
+          receiptFileName: 'MPGI_Hostel_Fee_Receipt_2026_Aditya.pdf',
+          receiptFileType: 'application/pdf',
+          receiptFileSize: '245 KB',
+          receiptDataUrl: '',
+          utrNo: 'SBI-UTR-9872145561',
+          amount: '₹68,500 (Annual Room Allotment + Mess Deposit)',
+          status: 'Pending HOD Approval',
+          submittedAt: '2026-11-17 02:45 PM',
+          password: '123',
+          allottedRoom: '',
+          allottedBed: '',
+          hodRemark: ''
+        },
+        {
+          id: 'REG-2026-204',
+          name: 'Megha Saxena',
+          rollNo: 'MPGI/25/CS/088',
+          branch: 'Computer Science & Engineering (CSE)',
+          course: 'B.Tech CSE — 1st Year',
+          wing: 'Female',
+          hostelName: "Gargi Girls' Hostel",
+          roomPref: 'Double Sharing (Window Side)',
+          mobile: '+91 98399 77112',
+          email: 'megha.saxena@mpgi.edu.in',
+          parentName: 'Ramesh Saxena',
+          parentContact: '+91 94150 66221',
+          receiptFileName: 'Hostel_Fee_Challan_Megha.jpg',
+          receiptFileType: 'image/jpeg',
+          receiptFileSize: '412 KB',
+          receiptDataUrl: '',
+          utrNo: 'PNB-CHALLAN-4458921',
+          amount: '₹68,500 (Full Year Hostel + Mess Charge)',
+          status: 'Pending HOD Approval',
+          submittedAt: '2026-11-17 04:10 PM',
+          password: '123',
+          allottedRoom: '',
+          allottedBed: '',
+          hodRemark: ''
+        }
+      ],
       currentStudentId: 'STU-M-101',
       currentHodWing: 'Male', // 'Male' | 'Female'
       mobileMenuOpen: false,
@@ -747,6 +802,12 @@
                 <button type="button" id="btn-choose-student" class="w-full py-2.5 px-4 bg-navy hover:bg-navy-dark text-white font-semibold text-sm rounded transition-colors">
                   Hosteler Login &rarr;
                 </button>
+                <div class="mt-4 pt-3 border-t border-slate-200 text-center">
+                  <div class="text-[11px] text-slate-500 mb-1.5 font-medium">New student or haven't been allotted a room yet?</div>
+                  <button type="button" id="btn-open-register" class="w-full py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs rounded border border-amber-600 shadow-sm flex items-center justify-center gap-1.5 transition">
+                    <span>📝</span> New Hosteller? Register &amp; Apply for Room
+                  </button>
+                </div>
               </div>
 
               <!-- Option 2: Hosteler HOD / Dean -->
@@ -802,6 +863,12 @@
                 <button type="submit" class="w-full py-2.5 bg-navy hover:bg-navy-dark text-white font-semibold text-sm rounded transition-colors">
                   Sign In to Hosteler Portal
                 </button>
+<div class="pt-4 border-t border-slate-200 text-center">
+                  <span class="text-xs text-slate-500">Need a hostel room &amp; haven't registered?</span>
+                  <button type="button" id="btn-login-to-register" class="text-xs text-navy font-bold hover:underline block mx-auto mt-1">
+                    Register Here &amp; Upload Hostel Fee Receipt &rarr;
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -1501,7 +1568,11 @@
       const wingApps = state.applications.filter(a => a.wing === wing);
       const pendingCount = wingApps.filter(a => a.status === 'Pending').length;
 
+      const wingRegs = (state.registrationRequests || []).filter(r => r.wing === wing);
+      const pendingRegCount = wingRegs.filter(r => r.status === 'Pending HOD Approval' || r.status === 'Pending').length;
+
       const tabs = [
+        { id: 'registrations', label: `New Registrations (${pendingRegCount} New)` },
         { id: 'applications', label: `Applications Issued (${pendingCount} Pending)` },
         { id: 'directory', label: "Hosteler's Information & Room Allotment" },
         { id: 'attendance', label: 'See & Mark Attendance' },
@@ -1511,6 +1582,132 @@
 
       let contentHtml = '';
 
+if (state.activeHodTab === 'registrations') {
+        const filter = state.regFilter || 'All';
+        const filteredRegs = filter === 'All'
+          ? wingRegs
+          : filter === 'Pending'
+            ? wingRegs.filter(r => r.status === 'Pending HOD Approval' || r.status === 'Pending')
+            : wingRegs.filter(r => r.status === filter);
+
+        const pendingCount = wingRegs.filter(r => r.status === 'Pending HOD Approval' || r.status === 'Pending').length;
+        const approvedCount = wingRegs.filter(r => r.status === 'Approved').length;
+        const rejectedCount = wingRegs.filter(r => r.status === 'Rejected').length;
+
+        contentHtml = `
+          <div class="space-y-5">
+            <div class="border-b border-slate-300 pb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="font-serif-college text-xl font-bold text-maroon">Student Registration &amp; Fee Receipt Verifications — ${escapeHtml(wing)} Hostel</h2>
+                <p class="text-xs text-slate-600">Review student hostel admission forms, verify institutional fee receipts, and allocate official room/bed numbers.</p>
+              </div>
+              <div class="flex items-center gap-1.5">
+                ${['All', 'Pending', 'Approved', 'Rejected'].map(f => `
+                  <button type="button" data-reg-filter="${f}" class="px-3 py-1.5 text-xs font-semibold rounded border ${(state.regFilter || 'All') === f ? 'bg-maroon text-white border-maroon' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}">
+                    ${f === 'All' ? `All (${wingRegs.length})` : f === 'Pending' ? `Pending (${pendingCount})` : f === 'Approved' ? `Approved (${approvedCount})` : `Rejected (${rejectedCount})`}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            ${filteredRegs.length === 0 ? `
+              <div class="college-card p-10 text-center text-sm text-slate-500">
+                <div class="text-3xl mb-2">📋</div>
+                <div class="font-semibold text-slate-700">No ${escapeHtml(filter.toLowerCase())} registration applications found.</div>
+                <p class="text-xs text-slate-500 mt-1">New student registrations and fee receipts for ${escapeHtml(wing)} Hostel will appear here.</p>
+              </div>
+            ` : `
+              <div class="space-y-4">
+                ${filteredRegs.map(r => {
+                  const isPending = r.status === 'Pending HOD Approval' || r.status === 'Pending';
+                  return `
+                    <div class="college-card p-5 border-l-4 ${isPending ? 'border-l-amber-500' : r.status === 'Approved' ? 'border-l-emerald-600' : 'border-l-red-600'}">
+                      <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-base text-slate-900">${escapeHtml(r.name)}</h3>
+                            <span class="text-xs font-mono font-bold text-navy bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${escapeHtml(r.rollNo)}</span>
+                            <span class="text-xs px-2 py-0.5 rounded font-semibold ${
+                              isPending ? 'bg-amber-100 text-amber-800' :
+                              r.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                            }">${escapeHtml(r.status)}</span>
+                          </div>
+                          <div class="text-xs text-slate-600 mt-1">
+                            <strong>Branch:</strong> ${escapeHtml(r.branch)} &bull; <strong>Course:</strong> ${escapeHtml(r.course)} &bull; <strong>Preference:</strong> ${escapeHtml(r.roomPref)}
+                          </div>
+                        </div>
+                        <div class="text-right text-xs text-slate-500">
+                          <div>Submitted: <strong>${escapeHtml(r.submittedAt)}</strong></div>
+                          <div class="text-slate-400 font-mono text-[11px]">ID: ${escapeHtml(r.id)}</div>
+                        </div>
+                      </div>
+
+                      <!-- Fee Receipt & Academic Details Box -->
+                      <div class="p-3.5 bg-slate-50 rounded border border-slate-200 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div>
+                          <span class="text-slate-500 font-semibold block">Fee Receipt / Transaction No:</span>
+                          <span class="font-mono font-bold text-slate-900">${escapeHtml(r.utrNo || 'Challan attached')}</span>
+                        </div>
+                        <div>
+                          <span class="text-slate-500 font-semibold block">Fee Amount Paid:</span>
+                          <span class="font-bold text-emerald-700">${escapeHtml(r.amount || '₹68,500')}</span>
+                        </div>
+                        <div>
+                          <span class="text-slate-500 font-semibold block">Attached Receipt File:</span>
+                          <button type="button" data-view-receipt="${r.id}" class="text-navy font-bold hover:underline flex items-center gap-1 mt-0.5">
+                            <span>📄</span> ${escapeHtml(r.receiptFileName || 'View Receipt Document')}
+                          </button>
+                        </div>
+                        <div>
+                          <span class="text-slate-500 font-semibold block">Student Mobile &amp; Email:</span>
+                          <span class="text-slate-800 font-medium">${escapeHtml(r.mobile)} &bull; ${escapeHtml(r.email)}</span>
+                        </div>
+                        <div class="md:col-span-2">
+                          <span class="text-slate-500 font-semibold block">Parent / Guardian Contact:</span>
+                          <span class="text-slate-800 font-medium">${escapeHtml(r.parentName || 'Parent')} (${escapeHtml(r.parentContact)})</span>
+                        </div>
+                      </div>
+
+                      ${r.allottedRoom ? `
+                        <div class="mb-3 p-2.5 bg-emerald-50 border border-emerald-200 rounded text-xs flex items-center justify-between text-emerald-900">
+                          <div><strong>Allotted Room &amp; Bed:</strong> ${escapeHtml(r.allottedRoom)} (${escapeHtml(r.allottedBed || 'Bed 1')}) &bull; Active in Resident Directory</div>
+                          ${r.hodRemark ? `<div class="text-[11px] text-slate-600"><strong>HOD Remark:</strong> ${escapeHtml(r.hodRemark)}</div>` : ''}
+                        </div>
+                      ` : ''}
+
+                      ${r.status === 'Rejected' && r.hodRemark ? `
+                        <div class="mb-3 p-2.5 bg-red-50 border border-red-200 rounded text-xs text-red-900">
+                          <strong>Rejection Reason:</strong> ${escapeHtml(r.hodRemark)}
+                        </div>
+                      ` : ''}
+
+                      <!-- HOD Actions -->
+                      ${isPending ? `
+                        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200">
+                          <div class="text-xs text-slate-600">
+                            Action required: Verify fee receipt authenticity before allotting room.
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <button type="button" data-view-receipt="${r.id}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-semibold rounded flex items-center gap-1">
+                              <span>📄</span> Inspect Receipt
+                            </button>
+                            <button type="button" data-reject-reg="${r.id}" class="px-3.5 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded">
+                              Reject Receipt
+                            </button>
+                            <button type="button" data-allot-reg="${r.id}" class="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded shadow-sm flex items-center gap-1">
+                              <span>✅</span> Verify Fee &amp; Allot Room
+                            </button>
+                          </div>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        `;
+      } else
       if (state.activeHodTab === 'applications') {
         const filteredApps = state.appFilter === 'All'
           ? wingApps
@@ -2587,6 +2784,584 @@
       });
 
 
+      
+      // Open Student Registration & Fee Upload Modal
+      function openRegistrationModal() {
+        openModal(`
+          <div class="border-b border-slate-200 pb-3 mb-4">
+            <div class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">MPGI Hostel Administration &bull; Session 2026–27</div>
+            <h2 class="font-serif-college text-lg font-bold text-navy mt-0.5">New Hosteller Registration &amp; Fee Receipt Upload</h2>
+            <p class="text-xs text-slate-600 mt-1">Submit your academic details and upload your official hostel fee receipt. Your application will be sent directly to the Hostel HOD / Dean for fee verification and room allotment.</p>
+          </div>
+
+          <form id="form-student-register" class="space-y-4 text-xs">
+            <!-- 1. Personal & Wing -->
+            <div class="p-3 bg-slate-50 rounded border border-slate-200 space-y-3">
+              <div class="font-bold text-navy uppercase text-[11px] border-b border-slate-200 pb-1">1. Student Identity &amp; Hostel Wing</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Full Student Name *</label>
+                  <input type="text" id="reg-name" required placeholder="e.g. Aditya Gupta" class="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-navy bg-white" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Gender &amp; Residential Wing *</label>
+                  <select id="reg-wing" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-white font-medium">
+                    <option value="Male">Male — Vivekananda Boys' Hostel</option>
+                    <option value="Female">Female — Gargi Girls' Hostel</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Academic Particulars -->
+            <div class="p-3 bg-slate-50 rounded border border-slate-200 space-y-3">
+              <div class="font-bold text-navy uppercase text-[11px] border-b border-slate-200 pb-1">2. Academic Credentials</div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Roll No / Enrollment No *</label>
+                  <input type="text" id="reg-roll" required placeholder="e.g. MPGI/25/CS/089" class="w-full border border-slate-300 rounded px-3 py-1.5 font-mono focus:outline-none focus:border-navy bg-white" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Engineering Branch / Dept *</label>
+                  <select id="reg-branch" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-white">
+                    <option value="Computer Science & Engineering (CSE)">Computer Science &amp; Engg (CSE)</option>
+                    <option value="Information Technology (IT)">Information Technology (IT)</option>
+                    <option value="Electronics & Communication (ECE)">Electronics &amp; Comm (ECE)</option>
+                    <option value="Mechanical Engineering (ME)">Mechanical Engineering (ME)</option>
+                    <option value="Civil Engineering (CE)">Civil Engineering (CE)</option>
+                    <option value="AI & Machine Learning (AI/ML)">AI &amp; Machine Learning (AI/ML)</option>
+                    <option value="Diploma Polytechnic">Diploma Polytechnic</option>
+                    <option value="Master of Computer Applications (MCA)">MCA</option>
+                    <option value="Master of Business Admin (MBA)">MBA</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Course &amp; Academic Year *</label>
+                  <select id="reg-course" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-white">
+                    <option value="B.Tech — 1st Year (New Admission)">B.Tech — 1st Year (New Admission)</option>
+                    <option value="B.Tech — 2nd Year (Lateral Entry)">B.Tech — 2nd Year (Lateral Entry)</option>
+                    <option value="B.Tech — 3rd Year">B.Tech — 3rd Year</option>
+                    <option value="B.Tech — 4th Year">B.Tech — 4th Year</option>
+                    <option value="Diploma — 1st Year">Diploma — 1st Year</option>
+                    <option value="MCA / MBA — 1st Year">MCA / MBA — 1st Year</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Preferred Room Type</label>
+                <select id="reg-room-pref" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-white">
+                  <option value="Double Sharing (Standard Room)">Double Sharing (Standard Room &mdash; 2 Residents)</option>
+                  <option value="Single Occupancy (Subject to Availability)">Single Occupancy (Subject to Dean Availability)</option>
+                  <option value="Triple Sharing (Economic)">Triple Sharing (Economic Sharing &mdash; 3 Residents)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 3. Contact & Parent Details -->
+            <div class="p-3 bg-slate-50 rounded border border-slate-200 space-y-3">
+              <div class="font-bold text-navy uppercase text-[11px] border-b border-slate-200 pb-1">3. Contact &amp; Emergency Telemetry</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Student Mobile Number *</label>
+                  <input type="text" id="reg-mobile" required placeholder="+91 98765 43210" class="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-navy bg-white" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Student Email Address *</label>
+                  <input type="email" id="reg-email" required placeholder="student@mpgi.edu.in" class="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-navy bg-white" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Parent / Guardian Full Name *</label>
+                  <input type="text" id="reg-pname" required placeholder="e.g. Rajesh Sharma" class="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-navy bg-white" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Parent Emergency Mobile *</label>
+                  <input type="text" id="reg-pcontact" required placeholder="+91 98112 33445" class="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-navy bg-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Hostel Fee Receipt Upload -->
+            <div class="p-3 bg-amber-50/50 rounded border border-amber-200 space-y-3">
+              <div class="flex items-center justify-between border-b border-amber-200 pb-1">
+                <span class="font-bold text-amber-900 uppercase text-[11px]">4. Official Hostel Fee Receipt &amp; Proof of Payment *</span>
+                <span class="text-[11px] text-amber-800 font-semibold">PDF, JPG, PNG Supported</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Fee Transaction UTR / Challan No *</label>
+                  <input type="text" id="reg-utr" required placeholder="e.g. SBI-UTR-9872145561 or Bank Challan No" class="w-full border border-slate-300 rounded px-3 py-1.5 font-mono focus:outline-none focus:border-navy bg-white" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Fee Amount Paid (₹) *</label>
+                  <input type="text" id="reg-amount" required value="₹68,500 (Annual Room &amp; Mess Fee)" class="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-navy bg-white" />
+                </div>
+              </div>
+
+              <!-- File Upload Picker -->
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Upload Receipt (PDF or Image) *</label>
+                <input type="file" id="reg-file-input" accept=".pdf,image/png,image/jpeg,image/jpg" class="hidden" />
+                <div id="reg-file-dropzone" class="border-2 border-dashed border-amber-300 hover:border-amber-500 rounded p-4 text-center bg-white cursor-pointer transition">
+                  <div class="text-2xl mb-1">📎</div>
+                  <div class="text-xs font-semibold text-slate-800" id="reg-file-text">Click to browse and choose your Fee Receipt (PDF or Image)</div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">Supports: .pdf, .jpg, .jpeg, .png (Max: 10MB)</div>
+                </div>
+                <div id="reg-file-preview" class="hidden mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span id="reg-file-icon" class="text-xl">📄</span>
+                    <div>
+                      <div id="reg-file-name" class="font-bold text-slate-900 text-xs">receipt.pdf</div>
+                      <div id="reg-file-size" class="text-[11px] text-slate-500">245 KB &bull; Verified Attachment</div>
+                    </div>
+                  </div>
+                  <button type="button" id="btn-remove-file" class="text-xs text-red-600 hover:underline font-semibold">Change File</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Set Password -->
+            <div class="p-3 bg-slate-50 rounded border border-slate-200">
+              <label class="block font-semibold text-slate-700 mb-1">Create Account Password (For login once HOD approves) *</label>
+              <input type="text" id="reg-password" required value="123" class="w-full border border-slate-300 rounded px-3 py-1.5 font-mono focus:outline-none focus:border-navy bg-white" />
+              <p class="text-[11px] text-slate-500 mt-1">Default is set to <strong>123</strong>. You will use your Roll Number and this password to log in.</p>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+              <button type="submit" class="px-5 py-2 bg-navy hover:bg-navy-dark text-white font-bold rounded shadow-sm flex items-center gap-1.5">
+                <span>🚀</span> Submit Registration to Hostel HOD
+              </button>
+            </div>
+          </form>
+        `);
+
+        // Handle File Picker
+        let uploadedFile = {
+          name: '',
+          type: '',
+          size: '',
+          dataUrl: ''
+        };
+
+        const dropzone = document.getElementById('reg-file-dropzone');
+        const fileInput = document.getElementById('reg-file-input');
+        const previewBox = document.getElementById('reg-file-preview');
+        const fileNameEl = document.getElementById('reg-file-name');
+        const fileSizeEl = document.getElementById('reg-file-size');
+        const fileIconEl = document.getElementById('reg-file-icon');
+        const removeFileBtn = document.getElementById('btn-remove-file');
+
+        if (dropzone && fileInput) {
+          dropzone.addEventListener('click', () => fileInput.click());
+          fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadedFile.name = file.name;
+            uploadedFile.type = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+            uploadedFile.size = (file.size / 1024).toFixed(1) + ' KB';
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              uploadedFile.dataUrl = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            fileNameEl.textContent = uploadedFile.name;
+            fileSizeEl.textContent = uploadedFile.size + ' • Ready for HOD Verification';
+            fileIconEl.textContent = uploadedFile.type.includes('pdf') ? '📕' : '🖼️';
+
+            dropzone.classList.add('hidden');
+            previewBox.classList.remove('hidden');
+          });
+
+          if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', () => {
+              fileInput.value = '';
+              uploadedFile = { name: '', type: '', size: '', dataUrl: '' };
+              previewBox.classList.add('hidden');
+              dropzone.classList.remove('hidden');
+            });
+          }
+        }
+
+        // Form Submit
+        const formReg = document.getElementById('form-student-register');
+        if (formReg) {
+          formReg.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value.trim();
+            const wing = document.getElementById('reg-wing').value;
+            const rollNo = document.getElementById('reg-roll').value.trim();
+            const branch = document.getElementById('reg-branch').value;
+            const course = document.getElementById('reg-course').value;
+            const roomPref = document.getElementById('reg-room-pref').value;
+            const mobile = document.getElementById('reg-mobile').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const parentName = document.getElementById('reg-pname').value.trim();
+            const parentContact = document.getElementById('reg-pcontact').value.trim();
+            const utrNo = document.getElementById('reg-utr').value.trim();
+            const amount = document.getElementById('reg-amount').value.trim();
+            const password = document.getElementById('reg-password').value.trim() || '123';
+
+            const newReg = {
+              id: 'REG-2026-' + Math.floor(1000 + Math.random() * 9000),
+              name,
+              wing,
+              hostelName: wing === 'Female' ? "Gargi Girls' Hostel" : "Vivekananda Boys' Hostel",
+              rollNo,
+              branch,
+              course,
+              roomPref,
+              mobile,
+              email,
+              parentName,
+              parentContact,
+              receiptFileName: uploadedFile.name || 'MPGI_Hostel_Fee_Challan_' + rollNo.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf',
+              receiptFileType: uploadedFile.type || 'application/pdf',
+              receiptFileSize: uploadedFile.size || '320 KB',
+              receiptDataUrl: uploadedFile.dataUrl || '',
+              utrNo,
+              amount,
+              status: 'Pending HOD Approval',
+              submittedAt: new Date().toLocaleString(),
+              password,
+              allottedRoom: '',
+              allottedBed: '',
+              hodRemark: ''
+            };
+
+            if (!state.registrationRequests) state.registrationRequests = [];
+            state.registrationRequests.unshift(newReg);
+
+            // API Sync if online
+            if (window.location.protocol.startsWith('http')) {
+              try {
+                await apiRequest('/api/registrations', 'POST', newReg);
+              } catch(err) {
+                console.warn('Registration API sync deferred to local state:', err);
+              }
+            }
+
+            saveState();
+            closeModal();
+            render();
+
+            // Open Confirmation Modal
+            setTimeout(() => {
+              openModal(`
+                <div class="text-center p-6 space-y-4">
+                  <div class="w-14 h-14 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center text-2xl mx-auto font-bold">
+                    ✓
+                  </div>
+                  <h3 class="font-serif-college text-xl font-bold text-navy">Registration Application Submitted!</h3>
+                  <div class="inline-block bg-blue-50 text-navy font-mono font-bold px-3 py-1 rounded border border-blue-200 text-xs">
+                    Tracking ID: ${escapeHtml(newReg.id)}
+                  </div>
+                  <p class="text-xs text-slate-700 max-w-md mx-auto leading-relaxed">
+                    Your details and hostel fee receipt (<strong>${escapeHtml(newReg.receiptFileName)}</strong>) have been dispatched directly to the <strong>${escapeHtml(wing)} Hostel HOD / Dean Portal</strong>.
+                  </p>
+                  <div class="bg-amber-50 p-3 rounded border border-amber-200 text-xs text-slate-800 text-left space-y-1">
+                    <div><strong>Student:</strong> ${escapeHtml(newReg.name)} (${escapeHtml(newReg.rollNo)})</div>
+                    <div><strong>Department:</strong> ${escapeHtml(newReg.branch)}</div>
+                    <div><strong>Fee UTR:</strong> ${escapeHtml(newReg.utrNo)} &bull; ${escapeHtml(newReg.amount)}</div>
+                    <div><strong>Status:</strong> <span class="text-amber-800 font-bold">Pending HOD Verification &amp; Room Allotment</span></div>
+                  </div>
+                  <p class="text-[11px] text-slate-500">
+                    Once the HOD verifies the receipt, your Room &amp; Bed will be allocated and you can immediately log in using your Roll Number and password.
+                  </p>
+                  <button type="button" onclick="closeModal()" class="px-6 py-2 bg-navy text-white text-xs font-semibold rounded hover:bg-navy-dark shadow">
+                    Understood &amp; Return to Home
+                  </button>
+                </div>
+              `);
+            }, 100);
+          });
+        }
+      }
+
+      // Attach register button events
+      const btnOpenRegister = document.getElementById('btn-open-register');
+      if (btnOpenRegister) {
+        btnOpenRegister.addEventListener('click', openRegistrationModal);
+      }
+      const btnLoginToReg = document.getElementById('btn-login-to-register');
+      if (btnLoginToReg) {
+        btnLoginToReg.addEventListener('click', openRegistrationModal);
+      }
+
+      // Registration Filter in HOD Portal
+      document.querySelectorAll('[data-reg-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.regFilter = btn.getAttribute('data-reg-filter');
+          render();
+        });
+      });
+
+      // HOD View Receipt Modal
+      document.querySelectorAll('[data-view-receipt]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-view-receipt');
+          const reg = (state.registrationRequests || []).find(r => r.id === id);
+          if (!reg) return;
+
+          const isPdf = (reg.receiptFileType && reg.receiptFileType.includes('pdf')) || (reg.receiptFileName && reg.receiptFileName.endsWith('.pdf'));
+
+          openModal(`
+            <div class="border-b border-slate-200 pb-3 mb-4 flex items-center justify-between">
+              <div>
+                <h3 class="font-serif-college text-lg font-bold text-navy">Fee Receipt Verification — ${escapeHtml(reg.name)}</h3>
+                <p class="text-xs text-slate-500">${escapeHtml(reg.rollNo)} &bull; ${escapeHtml(reg.branch)} &bull; ${escapeHtml(reg.wing)} Hostel</p>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded font-semibold bg-amber-100 text-amber-800">
+                UTR: ${escapeHtml(reg.utrNo || 'Verified')}
+              </span>
+            </div>
+
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-3 text-xs p-3 bg-slate-50 rounded border border-slate-200">
+                <div>
+                  <span class="text-slate-500 font-semibold">Payment Amount:</span>
+                  <div class="font-bold text-emerald-700 text-sm mt-0.5">${escapeHtml(reg.amount)}</div>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold">UTR / Transaction ID:</span>
+                  <div class="font-mono font-bold text-slate-800 text-sm mt-0.5">${escapeHtml(reg.utrNo)}</div>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold">Submission Timestamp:</span>
+                  <div class="text-slate-700 mt-0.5">${escapeHtml(reg.submittedAt)}</div>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold">Room Preference:</span>
+                  <div class="text-slate-700 mt-0.5">${escapeHtml(reg.roomPref)}</div>
+                </div>
+              </div>
+
+              <!-- Receipt File Viewer Area -->
+              <div class="border border-slate-300 rounded p-4 text-center bg-slate-100/50">
+                ${reg.receiptDataUrl && !isPdf ? `
+                  <div class="max-h-96 overflow-auto border border-slate-200 rounded p-2 bg-white inline-block">
+                    <img src="${reg.receiptDataUrl}" alt="Hostel Fee Receipt" class="max-w-full h-auto mx-auto rounded shadow" />
+                  </div>
+                ` : `
+                  <div class="py-6 space-y-3 bg-white border border-slate-200 rounded p-4 max-w-md mx-auto shadow-sm">
+                    <div class="text-4xl text-red-600">📕</div>
+                    <div class="font-bold text-slate-800 text-sm">${escapeHtml(reg.receiptFileName || 'Hostel_Fee_Receipt.pdf')}</div>
+                    <div class="text-xs text-slate-500">Official Institutional Bank Deposit Slip &bull; ${escapeHtml(reg.receiptFileSize || '245 KB')}</div>
+                    <div class="pt-2">
+                      <a ${reg.receiptDataUrl ? `href="${reg.receiptDataUrl}" download="${escapeHtml(reg.receiptFileName)}"` : 'href="#" onclick="showToast(\'Receipt file verified on local device.\'); return false;"'} class="px-4 py-2 bg-navy hover:bg-navy-dark text-white text-xs font-semibold rounded inline-flex items-center gap-1.5 shadow">
+                        <span>📥</span> Download / Open Full Document
+                      </a>
+                    </div>
+                  </div>
+                `}
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded text-xs text-slate-700">Close</button>
+                ${reg.status === 'Pending HOD Approval' || reg.status === 'Pending' ? `
+                  <button type="button" onclick="closeModal(); document.querySelector('[data-allot-reg=\\\"${reg.id}\\\"]').click();" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded shadow-sm flex items-center gap-1">
+                    <span>✅</span> Allot Room to Student &rarr;
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `);
+        });
+      });
+
+      // HOD Allot Room to Registered Student
+      document.querySelectorAll('[data-allot-reg]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-allot-reg');
+          const reg = (state.registrationRequests || []).find(r => r.id === id);
+          if (!reg) return;
+
+          const defaultRoom = reg.wing === 'Female' ? 'C-106' : 'A-205';
+
+          openModal(`
+            <div class="border-b border-slate-200 pb-3 mb-4">
+              <div class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Hostel Allocation Approval</div>
+              <h3 class="font-serif-college text-lg font-bold text-navy mt-0.5">Allot Room &amp; Activate Hosteler Account</h3>
+              <p class="text-xs text-slate-600">Applicant: <strong>${escapeHtml(reg.name)}</strong> (${escapeHtml(reg.rollNo)}) &bull; ${escapeHtml(reg.branch)}</p>
+            </div>
+
+            <form id="form-confirm-allot" class="space-y-4 text-xs">
+              <div class="p-3 bg-emerald-50/50 rounded border border-emerald-200 grid grid-cols-2 gap-3">
+                <div>
+                  <span class="text-slate-500 font-semibold block">Fee Receipt Status:</span>
+                  <span class="font-bold text-emerald-800">Verified &bull; ${escapeHtml(reg.amount)}</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold block">Preferred Room Type:</span>
+                  <span class="font-semibold text-slate-800">${escapeHtml(reg.roomPref)}</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Room Number *</label>
+                  <input type="text" id="ar-room" required value="${defaultRoom}" class="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-navy bg-white font-bold text-navy" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Bed Assignment *</label>
+                  <select id="ar-bed" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-white font-semibold">
+                    <option value="Bed 1 (Window Side)">Bed 1 (Window Side)</option>
+                    <option value="Bed 2 (Door Side)">Bed 2 (Door Side)</option>
+                    <option value="Bed 3 (Balcony Side)">Bed 3 (Balcony Side)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Block / Floor *</label>
+                  <input type="text" id="ar-block" required value="${reg.wing === 'Female' ? 'Wing C — 1st Floor' : 'Block A — 2nd Floor'}" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-white" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Hostel Building *</label>
+                  <input type="text" id="ar-hostel" required value="${reg.hostelName}" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-slate-50" readonly />
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Assign Roommate(s) (Optional, comma-separated)</label>
+                <input type="text" id="ar-roommates" placeholder="e.g. Rohan Verma (MPGI/24/CS/058)" class="w-full border border-slate-300 rounded px-3 py-1.5 bg-white" />
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">HOD / Warden Verification Remarks</label>
+                <textarea id="ar-remark" rows="2" class="w-full border border-slate-300 rounded p-2 focus:outline-none focus:border-navy bg-white" placeholder="Fee receipt verified against bank records. Room and bed allocated.">Fee receipt verified from Accounts Office. Room and bed allocated for Academic Session 2026–27.</textarea>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded text-slate-700">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded shadow-sm">
+                  Confirm Allotment &amp; Activate Account
+                </button>
+              </div>
+            </form>
+          `);
+
+          document.getElementById('form-confirm-allot').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const roomVal = document.getElementById('ar-room').value.trim();
+            const bedVal = document.getElementById('ar-bed').value;
+            const blockVal = document.getElementById('ar-block').value.trim();
+            const hostelVal = document.getElementById('ar-hostel').value.trim();
+            const rawRoommates = document.getElementById('ar-roommates').value.trim();
+            const roommatesArr = rawRoommates ? rawRoommates.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const remarkVal = document.getElementById('ar-remark').value.trim();
+
+            reg.status = 'Approved';
+            reg.allottedRoom = roomVal;
+            reg.allottedBed = bedVal;
+            reg.hodRemark = remarkVal;
+
+            // Automatically create active Hosteler profile
+            const newHosteler = {
+              id: 'STU-' + (reg.wing === 'Female' ? 'F-' : 'M-') + Math.floor(300 + Math.random() * 600),
+              rollNo: reg.rollNo,
+              name: reg.name,
+              wing: reg.wing,
+              hostelName: hostelVal || reg.hostelName,
+              block: blockVal,
+              roomNo: roomVal,
+              bedNo: bedVal,
+              roommates: roommatesArr,
+              allotted: true,
+              allotmentDate: new Date().toISOString().slice(0, 10),
+              course: reg.course || reg.branch,
+              mobile: reg.mobile,
+              email: reg.email,
+              parentName: reg.parentName,
+              parentContact: reg.parentContact,
+              warden: reg.wing === 'Female' ? 'Prof. Meenakshi Joshi (+91 94150 77889)' : 'Dr. S. K. Tiwari (+91 94150 11223)',
+              messStatus: 'Active (Paid)',
+              messCardNo: 'MPGI-MESS-2026-' + roomVal,
+              password: reg.password || '123'
+            };
+
+            // Avoid duplicate roll numbers
+            const existingIdx = state.hostelers.findIndex(h => h.rollNo === reg.rollNo);
+            if (existingIdx !== -1) {
+              state.hostelers[existingIdx] = newHosteler;
+            } else {
+              state.hostelers.push(newHosteler);
+            }
+
+            // API Sync if online
+            if (window.location.protocol.startsWith('http')) {
+              try {
+                await apiRequest('/api/registrations/' + encodeURIComponent(reg.id) + '/approve', 'POST', {
+                  roomNo: roomVal,
+                  bedNo: bedVal,
+                  block: blockVal,
+                  hostelName: hostelVal,
+                  roommates: roommatesArr,
+                  hodRemark: remarkVal
+                });
+              } catch(err) {
+                console.warn('Approve registration API sync deferred to local state:', err);
+              }
+            }
+
+            saveState();
+            closeModal();
+            render();
+            showToast(`Room ${roomVal} allotted to ${reg.name}. Student account activated!`);
+          });
+        });
+      });
+
+      // HOD Reject Registration
+      document.querySelectorAll('[data-reject-reg]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-reject-reg');
+          const reg = (state.registrationRequests || []).find(r => r.id === id);
+          if (!reg) return;
+
+          openModal(`
+            <h3 class="font-serif-college text-lg font-bold text-red-800 mb-2">Reject Registration &amp; Fee Receipt</h3>
+            <p class="text-xs text-slate-600 mb-3">Applicant: <strong>${escapeHtml(reg.name)}</strong> (${escapeHtml(reg.rollNo)})</p>
+            <form id="form-reject-reg" class="space-y-3 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Reason for Rejection *</label>
+                <textarea id="rej-remark" required rows="3" class="w-full border border-slate-300 rounded p-2 focus:outline-none focus:border-red-700" placeholder="e.g. Fee receipt unreadable, bank transaction reference mismatch, or partial fee paid.">Fee receipt unreadable or transaction reference mismatch. Please upload a clear bank deposit slip.</textarea>
+              </div>
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded text-slate-700">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-red-700 text-white font-semibold rounded">Confirm Rejection</button>
+              </div>
+            </form>
+          `);
+
+          document.getElementById('form-reject-reg').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const reason = document.getElementById('rej-remark').value.trim();
+            reg.status = 'Rejected';
+            reg.hodRemark = reason;
+
+            if (window.location.protocol.startsWith('http')) {
+              try {
+                await apiRequest('/api/registrations/' + encodeURIComponent(reg.id) + '/reject', 'POST', {
+                  hodRemark: reason
+                });
+              } catch(err) {
+                console.warn('Reject registration API sync deferred to local state:', err);
+              }
+            }
+
+            saveState();
+            closeModal();
+            render();
+            showToast(`Registration for ${reg.name} marked as rejected.`, 'info');
+          });
+        });
+      });
+
       // Menu Day Selector
       document.querySelectorAll('[data-menu-day]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2818,18 +3593,20 @@
     async function initSync() {
       if (window.location.protocol.startsWith('http')) {
         try {
-          const [hList, ttList, mmList, nList, aList] = await Promise.all([
+          const [hList, ttList, mmList, nList, aList, rList] = await Promise.all([
             apiRequest('/api/hostelers').catch(() => null),
             apiRequest('/api/timetable').catch(() => null),
             apiRequest('/api/mess-menu').catch(() => null),
             apiRequest('/api/notices').catch(() => null),
-            apiRequest('/api/applications').catch(() => null)
+            apiRequest('/api/applications').catch(() => null),
+            apiRequest('/api/registrations').catch(() => null)
           ]);
           if (hList && Array.isArray(hList) && hList.length) state.hostelers = hList;
           if (ttList && Array.isArray(ttList) && ttList.length) state.timetable = ttList;
           if (mmList && typeof mmList === 'object' && mmList.Monday) state.messMenu = mmList;
           if (nList && Array.isArray(nList) && nList.length) state.notices = nList;
           if (aList && Array.isArray(aList) && aList.length) state.applications = aList;
+          if (rList && Array.isArray(rList) && rList.length) state.registrationRequests = rList;
           saveState();
           render();
         } catch (e) {
