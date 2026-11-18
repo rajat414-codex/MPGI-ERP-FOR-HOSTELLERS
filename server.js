@@ -50,9 +50,23 @@ function requireApiKey(req, res, next) {
   next();
 }
 
-// Health check
+// Health check & Server / DB Connection telemetry
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: "MPGI Hosteler's ERP API", version: '3.0.0' });
+  const db = readDb();
+  res.json({
+    status: 'ok',
+    service: "MPGI Hosteler's ERP API",
+    version: '3.1.0',
+    timestamp: new Date().toISOString(),
+    stats: {
+      hostelers: (db.hostelers || []).length,
+      registrationRequests: (db.registrationRequests || []).length,
+      timetable: (db.timetable || []).length,
+      notices: (db.notices || []).length,
+      applications: (db.applications || []).length,
+      messMenuDays: Object.keys(db.messMenu || {}).length
+    }
+  });
 });
 
 // Auth endpoint — Student types Roll No & Password; HOD enters Admin password
